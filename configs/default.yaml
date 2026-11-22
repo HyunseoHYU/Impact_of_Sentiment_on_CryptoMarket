@@ -1,7 +1,12 @@
-csv: null            # null -> synthetic regime-switching data
+csv: null              # null -> synthetic regime-switching data
+sentiment_csv: null    # optional separate `date, sentiment` CSV merged onto `csv`
+sentiment_lag: 1       # rows to delay sentiment so it is known before the close it predicts
 n: 3000
-seed: 0
-train_frac: 0.7
+seed: 0                # data seed (synthetic) and router init seed
+sentiment_signal: 0.6  # synthetic only: 0.0 = sentiment is pure noise (null case)
+train_frac: 0.7        # first test block starts here
+n_folds: 5             # expanding-window walk-forward folds over the rest
+cost_bps: 10           # cost per unit of position change (a long->short flip pays 2x)
 out_dir: outputs
 label: {horizon: 30, k: 0.4, vol_window: 30}
 router: {hidden: 4, lr: 0.05, epochs: 150, l2: 0.03, temperature: 1.0, top_k: 0}
