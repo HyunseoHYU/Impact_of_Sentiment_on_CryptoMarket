@@ -16,11 +16,19 @@ def macro_f1(y, p, k=3):
     return float(np.mean(f))
 
 
-def trading_stats(pred, ret):
-    """Long/short by sign of prediction; daily returns, crypto 365d/yr."""
+def trading_stats(pred, ret, cost_bps: float = 0.0):
+    """Long/short by sign of prediction on daily log returns `ret`; crypto 365d/yr.
+
+    P&L uses simple returns (so shorts are exact) minus `cost_bps` per unit of position
+    change; a full long->short flip costs 2x. Reports both net and gross Sharpe.
+    """
     pos = np.sign(pred)
-    pnl = pos * ret
-    sharpe = pnl.mean() / (pnl.std() + 1e-12) * np.sqrt(365)
-    ic = np.corrcoef(pred, ret)[0, 1] if pred.std() > 0 else 0.0
+    turnover = np.abs(np.diff(pos, prepend=0.0))
+    gross = pos * np.expm1(ret)
+    net = gross - turnover * cost_bps / 1e4
+    ann = np.sqrt(365)
+    ic = np.corrcoef(pred, ret)[0, 1] if pred.std() > 0 and ret.std() > 0 else 0.0
     return {"dir_acc": float((pos == np.sign(ret)).mean()), "ic": float(ic),
-            "sharpe": float(sharpe), "cum_ret": float(np.exp(pnl.sum()) - 1)}
+            "sharpe": float(net.mean() / (net.std() + 1e-12) * ann),
+            "gross_sharpe": float(gross.mean() / (gross.std() + 1e-12) * ann),
+            "turnover": float(turnover.mean()), "cum_ret": float(np.prod(1 + net) - 1)}
